@@ -1,8 +1,9 @@
 const { json } = require('express');
 const Tour = require('./../models/tourModel');
 const APIFeatures = require('./../utils/apiFeatures');
+const AppError = require('./../utils/appError');
 
-async function getAllTours(req, res) {
+async function getAllTours(req, res, next) {
   try {
     const features = new APIFeatures(Tour.find(), req.query)
       .filter()
@@ -20,16 +21,17 @@ async function getAllTours(req, res) {
       },
     });
   } catch (err) {
-    res.status(404).json({
-      status: 'fail',
-      message: err,
-    });
+    next(new AppError(err.message, 404));
   }
 }
 
-async function getTour(req, res) {
+async function getTour(req, res, next) {
   try {
     const tour = await Tour.findById(req.params.id);
+
+    if (!tour) {
+      return next(new AppError('No tour found with that ID', 404));
+    }
 
     res.status(200).json({
       status: 'success',
@@ -38,14 +40,11 @@ async function getTour(req, res) {
       },
     });
   } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err,
-    });
+    next(new AppError(err.message, 404));
   }
 }
 
-async function createTour(req, res) {
+async function createTour(req, res, next) {
   try {
     const newTour = await Tour.create(req.body);
 
@@ -56,19 +55,20 @@ async function createTour(req, res) {
       },
     });
   } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: 'Invalid data sent',
-    });
+    next(new AppError(err.message, 404));
   }
 }
 
-async function updateTour(req, res) {
+async function updateTour(req, res, next) {
   try {
     const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
     });
+
+    if (!tour) {
+      return next(new AppError('No tour found with that ID', 404));
+    }
 
     res.status(200).json({
       status: 'success',
@@ -77,30 +77,28 @@ async function updateTour(req, res) {
       },
     });
   } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err,
-    });
+    next(new AppError(err.message, 404));
   }
 }
 
-async function deleteTour(req, res) {
+async function deleteTour(req, res, next) {
   try {
-    await Tour.findByIdAndDelete(req.params.id);
+    const tour = await Tour.findByIdAndDelete(req.params.id);
+
+    if (!tour) {
+      return next(new AppError('No tour found with that ID', 404));
+    }
 
     res.status(204).json({
       status: 'success',
       data: null,
     });
   } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err,
-    });
+    next(new AppError(err.message, 404));
   }
 }
 
-async function getTourStats(req, res) {
+async function getTourStats(req, res, next) {
   try {
     const stats = await Tour.aggregate([
       {
@@ -125,14 +123,11 @@ async function getTourStats(req, res) {
       },
     });
   } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err,
-    });
+    next(new AppError(err.message, 404));
   }
 }
 
-async function getMonthlyPlan(req, res) {
+async function getMonthlyPlan(req, res, next) {
   try {
     const year = req.params.year * 1;
 
@@ -181,10 +176,7 @@ async function getMonthlyPlan(req, res) {
       },
     });
   } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err,
-    });
+    next(new AppError(err.message, 404));
   }
 }
 
