@@ -1,24 +1,40 @@
 const nodemailer = require('nodemailer');
 
-const sendEmail = async options => {
-
-    const transporter = nodemailer.createTransport({
-        host: process.env.EMAIL_HOST,
-        port: process.env.EMAIL_PORT,
-        auth: {
-            user: process.env.EMAIL_USERNAME,
-            pass: process.env.EMAIL_PASS,
-        }
-    })
-
-    const mailOptions = {
-        from: 'Sasa <hello@sasa.io>',
-        to: options.email,
-        subject: options.subject,
-        text: options.message,
+module.exports = class Email {
+    constructor(user, url) {
+        this.to = user.email;
+        this.firstName = user.name.split(" ")[0];
+        this.url = url
+        this.from = 'Sasa M. <hello@sasa.io>'
     }
 
-    await transporter.sendMail(mailOptions);
+    newTransport(){
+        return nodemailer.createTransport({
+            service: 'SendGrid',
+            auth: {
+                user: 'testAPI',
+                pass: process.env.SENDGRID_KEY,
+            }
+        })
+    }
+
+    // Send actual email
+    async send(subject, text){
+        // Define email options
+        const mailOptions = {
+            from: this.from,
+            to: this.to,
+            subject: subject,
+            text: text
+        }
+
+        // Create a transport and send email
+        await this.newTransport().sendMail(mailOptions)
+
+    }
+    async sendPasswordReset(){
+        await this.send('passwordReset', `Forgot your password? Submit a PATCH request with your new password and
+    passwordConfirm to: ${this.url}.\nIf you didn't forget your password, please ignore this email!`)
+    }
 }
 
-module.exports = sendEmail;

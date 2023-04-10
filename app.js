@@ -1,3 +1,4 @@
+const path = require('path')
 const express = require('express');
 const morgan = require('morgan');
 const tourRouter = require(`${__dirname}/routes/tourRoutes`);
@@ -12,6 +13,9 @@ const xss = require('xss-clean');
 const hpp = require('hpp');
 
 const app = express();
+
+// Serving static files
+app.use(express.static(path.join(__dirname,'public')));
 
 // Security HTTP headers
 app.use(helmet())
@@ -42,9 +46,6 @@ app.use(xss());
 app.use(hpp({
   whitelist: ['duration', 'maxGroupSize', 'difficulty', 'price', 'ratingsAverage', 'ratingsQuantity']
 }));
-
-// Serving static files
-app.use(express.static(`${__dirname}/public`));
 
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);

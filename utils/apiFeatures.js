@@ -1,3 +1,4 @@
+// In this call are all possible query strings that are configured and allowed
 class APIFeatures {
   constructor(query, queryString) {
     this.query = query;
@@ -10,6 +11,7 @@ class APIFeatures {
     excludedFields.forEach((el) => delete queryObj[el]);
 
     // Advenced Filtering
+    // Setting before any (allowed) mongodb command $ sign
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
 

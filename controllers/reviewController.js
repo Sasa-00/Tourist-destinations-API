@@ -1,44 +1,26 @@
 const Review = require('./../models/reviewModel');
 const AppError = require('./../utils/appError');
+const { deleteOne, updateOne, createOne, getOne, getAll } = require("./handlerFactory");
 
-async function getAllReviews (req,res,next) {
-  try{
-    const allReviews = await Review.find();
-
-    res.status(200).json({
-      status: 'success',
-      results: allReviews.length,
-      data: {
-        reviews: allReviews
-      },
-    });
-  }catch(err){
-    next(new AppError(err.message, 401))
-  }
+// Middleware to set id's, if they does not exist in expected location
+function setTourAndUserIds(req,res,next){
+  // Allow nested routes
+  if(!req.body.tour) req.body.tour = req.params.tourId;
+  if(!req.body.user) req.body.user = req.user.id;
+  next();
 }
 
-async function createReview (req,res,next) {
-  try{
-    const newReview = await Review.create({
-      rating: req.body.rating,
-      review: req.body.review,
-      tour: req.body.tour,
-      user: req.body.user
-    })
-
-    res.status(201).json({
-      status: 'success',
-      data: {
-        review: newReview,
-      },
-    });
-  }catch(err){
-    next(new AppError(err.message, 401))
-  }
-}
+const getAllReviews = getAll(Review);
+const getReview = getOne(Review)
+const createReview = createOne(Review)
+const updateReview = updateOne(Review)
+const deleteReview = deleteOne(Review)
 
 module.exports = {
   createReview,
-  getAllReviews
+  getAllReviews,
+  deleteReview,
+  updateReview,
+  setTourAndUserIds,
+  getReview
 };
-

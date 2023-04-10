@@ -2,14 +2,17 @@ const { promisify } = require('util')
 const crypto = require('crypto')
 const User = require('./../models/userModel');
 const AppError = require('./../utils/appError');
-const sendEmail = require('./../utils/email');
+const Email = require('./../utils/email');
 const jwt = require('jsonwebtoken')
 
+// Function for making JWT token
 function signToken (id) {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN
   });
 }
+
+// Function to send responses with JWT
 function createSendToken(user,statusCode, res) {
   const token = signToken(user._id)
 
@@ -30,6 +33,7 @@ function createSendToken(user,statusCode, res) {
   })
 }
 
+// Signing up user
 async function signup(req, res, next) {
   try {
     const newUser = await User.create({
@@ -46,6 +50,7 @@ async function signup(req, res, next) {
   }
 }
 
+// Logging in user
 async function login(req, res, next) {
   try {
     const { email, password } = req.body;
@@ -66,6 +71,7 @@ async function login(req, res, next) {
   }
 }
 
+// Checking has user a JWT token
 async function protect(req, res, next) {
   try {
     let token;
@@ -96,6 +102,7 @@ async function protect(req, res, next) {
   }
 }
 
+// Function checking does current user has appropriate role
 function restrictTo(...roles) {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
@@ -105,6 +112,7 @@ function restrictTo(...roles) {
   }
 }
 
+// Function that sends email to change forgotten password
 async function forgotPassword(req, res, next) {
   try {
     const user = await User.findOne({ email: req.body.email })
@@ -118,15 +126,8 @@ async function forgotPassword(req, res, next) {
 
     const resetURL = `${req.protocol}://${req.get('host')}/api/v1/users/resetPassword/${resetToken}`;
 
-    const message = `Forgot your password? Submit a PATCH request with your new password and
-    passwordConfirm to: ${resetURL}.\nIf you didn't forget your password, please ignore this email!`;
-
     try {
-      await sendEmail({
-        email: user.email,
-        subject: 'Your password reset token (valid for 10min)',
-        message
-      });
+      await new Email(user, resetURL).sendPasswordReset();
 
       res.status(200).json({
         status: 'success',
@@ -144,6 +145,7 @@ async function forgotPassword(req, res, next) {
   }
 }
 
+// Checking is token for changing forgotten password valid, and then change it
 async function resetPassword(req, res, next) {
   try {
     const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
@@ -169,6 +171,7 @@ async function resetPassword(req, res, next) {
   }
 }
 
+// Function to change password when user knows his old password
 async function updatePassword (req,res,next){
   try{
     user = await User.findById(req.user.id).select('+password');
